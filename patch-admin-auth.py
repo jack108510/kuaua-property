@@ -8,7 +8,7 @@ from pathlib import Path
 root = Path(__file__).parent
 source = root / "assets/index-0548bf05cc.js"
 target = root / "assets/index-admin-auth-20261011.js"
-html = root / "index.html"
+pages = [root / "index.html", root / "404.html"]
 bundle = source.read_text()
 
 
@@ -42,8 +42,9 @@ replace_once(
 )
 
 target.write_text(bundle)
-page = html.read_text()
 old_src = "/assets/index-0548bf05cc.js"
-if page.count(old_src) != 1:
-    raise RuntimeError("Expected one active bundle reference")
-html.write_text(page.replace(old_src, "/assets/index-admin-auth-20261011.js", 1))
+for html in pages:
+    page = html.read_text()
+    if page.count(old_src) != 1:
+        raise RuntimeError(f"Expected one active bundle reference in {html.name}")
+    html.write_text(page.replace(old_src, "/assets/index-admin-auth-20261011.js", 1))
