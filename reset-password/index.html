@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="referrer" content="no-referrer">
+  <title>Reset admin password · Wilde Maui</title>
+  <style>
+    :root{font-family:system-ui,-apple-system,sans-serif;color:#18323a;background:#f7f3eb}
+    body{margin:0;min-height:100vh;display:grid;place-items:center;padding:24px;box-sizing:border-box}
+    main{width:min(100%,420px);background:#fff;border:1px solid #e8dfd0;border-radius:16px;padding:32px;box-shadow:0 14px 40px #18323a13}
+    h1{font-family:Georgia,serif;font-weight:400;font-size:2rem;margin:0 0 8px}
+    p{line-height:1.5;color:#53636a}
+    label{display:block;font-size:.88rem;font-weight:600;margin:18px 0 6px}
+    input{box-sizing:border-box;width:100%;padding:12px;border:1px solid #b9c6ca;border-radius:8px;font:inherit}
+    button{width:100%;margin-top:24px;padding:13px;border:0;border-radius:8px;background:#285666;color:#fff;font:inherit;font-weight:700;cursor:pointer}
+    button:disabled{opacity:.6;cursor:wait}
+    #message{min-height:1.5em}
+    a{color:#285666}
+  </style>
+</head>
+<body>
+  <main>
+    <h1>Reset admin password</h1>
+    <p id="message">Checking your recovery link…</p>
+    <form id="resetForm" hidden>
+      <label for="password">New password</label>
+      <input id="password" type="password" autocomplete="new-password" minlength="8" required>
+      <label for="confirmation">Confirm new password</label>
+      <input id="confirmation" type="password" autocomplete="new-password" minlength="8" required>
+      <button id="submitButton" type="submit">Save password</button>
+    </form>
+    <p><a href="/admin">Back to admin</a></p>
+  </main>
+  <script>
+    const project='https://xacehhtgvubcqdoltazg.supabase.co';
+    const publishableKey='sb_publishable_1TNu5hqotJ7GGQXfjliivQ_ttK51EAA';
+    const adminId='45717c8c-08f9-469f-bf7d-2fa2ef5ad441';
+    const params=new URLSearchParams(location.hash.slice(1));
+    const accessToken=params.get('access_token');
+    const message=document.getElementById('message');
+    const form=document.getElementById('resetForm');
+    history.replaceState(null,'',location.pathname);
+
+    (async()=>{
+      if(params.get('type')!=='recovery'||!accessToken){
+        message.textContent='This recovery link is missing or expired. Request a new link from Supabase.';
+        return;
+      }
+      try{
+        const r=await fetch(`${project}/auth/v1/user`,{headers:{apikey:publishableKey,Authorization:`Bearer ${accessToken}`}});
+        const user=await r.json();
+        if(!r.ok||user.id!==adminId)throw new Error('Invalid recovery link');
+        message.textContent='Choose a new password for your admin account.';
+        form.hidden=false;
+      }catch{
+        message.textContent='This recovery link could not be verified. Request a new link from Supabase.';
+      }
+    })();
+
+    form.addEventListener('submit',async event=>{
+      event.preventDefault();
+      const password=document.getElementById('password').value;
+      const confirmation=document.getElementById('confirmation').value;
+      if(password!==confirmation){message.textContent='Passwords do not match.';return;}
+      const button=document.getElementById('submitButton');
+      button.disabled=true;
+      try{
+        const r=await fetch(`${project}/auth/v1/user`,{
+          method:'PUT',
+          headers:{apikey:publishableKey,Authorization:`Bearer ${accessToken}`,'Content-Type':'application/json'},
+          body:JSON.stringify({password})
+        });
+        if(!r.ok){const error=await r.json().catch(()=>({}));throw new Error(error.msg||error.message||'Unable to save password');}
+        form.hidden=true;
+        message.textContent='Password updated. You can now sign in to the admin dashboard.';
+      }catch(error){message.textContent=error.message;button.disabled=false;}
+    });
+  </script>
+</body>
+</html>
