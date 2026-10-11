@@ -1,0 +1,13 @@
+/* Give portrait tablets one readable calendar month per row. */
+.wm-calendar-months { grid-template-columns: minmax(0, 1fr); }
+.wm-calendar-first { border-bottom: 1px solid #e8e4d7; }
+@media (min-width: 900px) and (orientation: landscape) {
+  .wm-calendar-months { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .wm-calendar-first { border-bottom: 0; border-right: 1px solid #e8e4d7; }
+}
+
+/* iPad touch targets should remain clear after rotating the device. */
+@media (min-width: 600px) and (pointer: coarse) {
+  .wm-calendar-days > div { min-height: 48px; touch-action: manipulation; }
+  .wm-calendar-days > div > span { width: 44px; height: 44px; }
+}
